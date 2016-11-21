@@ -36,5 +36,8 @@ Imports System.Runtime.InteropServices
 'Fourth number is number of seconds since midnight, divided by 2
 'See 826777 on StackOverflow
 
-<Assembly: AssemblyVersion("1.0.*")>
-<Assembly: AssemblyFileVersion("1.0.0.0")> 
+<Assembly: AssemblyVersion("1.1.*")>
+<Assembly: AssemblyFileVersion("1.0.0.0")>
+
+'Version 1.0: Initial Release. Installed on DEO and DVG,F/O Side
+'Version 1.1: Additional erro handling and logging added

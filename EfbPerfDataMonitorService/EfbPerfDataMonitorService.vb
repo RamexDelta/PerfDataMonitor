@@ -366,60 +366,84 @@ Public Class EfbPerfDataMonitorService
             Call WriteToLog("Error attempting to decode Ground Speed")
         End Try
 
-        'Check Engine Oil Pressure discretes
-        'True = Engine Operating 
-        DatabusClass.Eng1Lop = DatabusClass.DiscreteStatus(2)
-        DatabusClass.Eng2Lop = DatabusClass.DiscreteStatus(3)
-        'Check Weight on Wheels
-        'True = In Air
-        DatabusClass.WoW = DatabusClass.DiscreteStatus(1)
-
-        If DatabusClass.PreviousEng1Lop = False And DatabusClass.Eng1Lop = True Then
-            'Engine 1 has been switched on
-            Eng1StartTime = DateTime.Now
-            Call WriteToLog("Eng 1 now operating")
-        End If
-        If DatabusClass.PreviousEng2Lop = False And DatabusClass.Eng2Lop = True Then
-            'Engine 2 has been switched on
-            Eng2StartTime = DateTime.Now
-            Call WriteToLog("Eng 2 now operating")
-        End If
-        If DatabusClass.PreviousEng1Lop = True And DatabusClass.Eng1Lop = True Then
-            'Engine 1 is running
-            Eng1RunTime = DateDiff(DateInterval.Second, Eng1StartTime, Now)
-            'Call WriteToLog("Eng1RunTime = " & Eng1RunTime)
-        End If
-        If DatabusClass.PreviousEng2Lop = True And DatabusClass.Eng2Lop = True Then
-            'Engine 2 is running
-            Eng2RunTIme = DateDiff(DateInterval.Second, Eng2StartTime, Now)
-            'Call WriteToLog("Eng2RunTime = " & Eng2RunTIme)
-        End If
+        Try
+            'Check Engine Oil Pressure discretes
+            'True = Engine Operating 
+            DatabusClass.Eng1Lop = DatabusClass.DiscreteStatus(2)
+            DatabusClass.Eng2Lop = DatabusClass.DiscreteStatus(3)
+            'Check Weight on Wheels
+            'True = In Air
+            DatabusClass.WoW = DatabusClass.DiscreteStatus(1)
+        Catch ex As Exception
+            Call WriteToLog("Error attempting to retrieve Discetes")
+        End Try
 
 
-        'Check Current Status
-        If (GroundSpeed > 10 And GroundSpeed < 900) And Eng1RunTime > 10 And Eng2RunTime > 10 Then
-            'If Eng1RunTime > 10 And GroundSpeed < 900 And Eng2RunTime > 10 Then
-            'Proceed with the check
-            Call WriteToLog("Ground Speed = " & GroundSpeed & " | Both Engines Running")
-            Call WriteToLog("Proceeding")
-            'Enable the next timer
-            makeComparisonTimer.Enabled = True
-        ElseIf (GroundSpeed > 100 And GroundSpeed < 900) Or DatabusClass.WoW = True Then
-            'Ground Speed > 100 or aircraft is in air.
-            'stop the service
-            Call WriteToLog("Ground Speed = " & GroundSpeed & " | Wow = " & DatabusClass.WoW)
-            Call WriteToLog("Stopping Service because Ground Speed > 100, or aircraft is In Air")
-            'Stop The Service
-            [Stop]()
-        Else
-            'Neither the Continue condition or the Stop condition were met
-            'Keep looping
-            'Set the Previous Eng LOP values
-            DatabusClass.PreviousEng1Lop = DatabusClass.Eng1Lop
-            DatabusClass.PreviousEng2Lop = DatabusClass.Eng2Lop
+        Try
+            If DatabusClass.PreviousEng1Lop = False And DatabusClass.Eng1Lop = True Then
+                'Engine 1 has been switched on
+                Eng1StartTime = DateTime.Now
+                Call WriteToLog("Eng 1 now operating")
+            End If
+        Catch ex As Exception
+            Call WriteToLog("Error attempting to derive Eng1StartTime")
+        End Try
+        Try
+            If DatabusClass.PreviousEng2Lop = False And DatabusClass.Eng2Lop = True Then
+                'Engine 2 has been switched on
+                Eng2StartTime = DateTime.Now
+                Call WriteToLog("Eng 2 now operating")
+            End If
+        Catch ex As Exception
+            Call WriteToLog("Error attempting to derive Eng2StartTime")
+        End Try
+        Try
+            If DatabusClass.PreviousEng1Lop = True And DatabusClass.Eng1Lop = True Then
+                'Engine 1 is running
+                Eng1RunTime = DateDiff(DateInterval.Second, Eng1StartTime, Now)
+                'Call WriteToLog("Eng1RunTime = " & Eng1RunTime)
+            End If
+        Catch ex As Exception
+            Call WriteToLog("Error attempting to derive Eng1RunTime")
+        End Try
+        Try
+            If DatabusClass.PreviousEng2Lop = True And DatabusClass.Eng2Lop = True Then
+                'Engine 2 is running
+                Eng2RunTime = DateDiff(DateInterval.Second, Eng2StartTime, Now)
+                'Call WriteToLog("Eng2RunTime = " & Eng2RunTIme)
+            End If
+        Catch ex As Exception
+            Call WriteToLog("Error attempting to derive Eng2RunTime")
+        End Try
 
+        Try
+            'Check Current Status
+            If (GroundSpeed > 10 And GroundSpeed < 900) And Eng1RunTime > 10 And Eng2RunTime > 10 Then
+                'If Eng1RunTime > 10 And GroundSpeed < 900 And Eng2RunTime > 10 Then
+                'Proceed with the check
+                Call WriteToLog("Ground Speed = " & GroundSpeed & " | Both Engines Running")
+                Call WriteToLog("Proceeding")
+                'Enable the next timer
+                makeComparisonTimer.Enabled = True
+            ElseIf (GroundSpeed > 100 And GroundSpeed < 900) Or DatabusClass.WoW = True Then
+                'Ground Speed > 100 or aircraft is in air.
+                'stop the service
+                Call WriteToLog("Ground Speed = " & GroundSpeed & " | Wow = " & DatabusClass.WoW)
+                Call WriteToLog("Stopping Service because Ground Speed > 100, or aircraft is In Air")
+                'Stop The Service
+                [Stop]()
+            Else
+                'Neither the Continue condition or the Stop condition were met
+                'Keep looping
+                'Set the Previous Eng LOP values
+                DatabusClass.PreviousEng1Lop = DatabusClass.Eng1Lop
+                DatabusClass.PreviousEng2Lop = DatabusClass.Eng2Lop
+                valueMonitorTimer.Enabled = True
+            End If
+        Catch ex As Exception
+            Call WriteToLog("Error attempting to check current status.")
             valueMonitorTimer.Enabled = True
-        End If
+        End Try
 
     End Sub
 
@@ -558,8 +582,13 @@ Public Class EfbPerfDataMonitorService
         'Some Others: Frame 4, Word 13 (these have 256 words)
 
         'above values now read from the LabelList xml file
+        Try
+            TempSubFrame = DatabusClass.Get717SubFrame(WordCount)
+            Call WriteToLog("TempSubFrame has been populated. Status is " & TempSubFrame.SuccessStatus & ". Word1 is " & TempSubFrame.WordsRaw(1).ToString)
+        Catch ex As Exception
+            Call WriteToLog("Error attempting to populate TempSubFrame (in A717ReaderTimerTick block)")
+        End Try
 
-        TempSubFrame = DatabusClass.Get717SubFrame(WordCount)
         'Call WriteToLog(TempSubFrame.Timestamp & "- " & TempSubFrame.WordsRaw(1).ToString)
         If TempSubFrame.Timestamp <> pTimeStamp And TempSubFrame.SuccessStatus = True Then
             'Call WriteToLog(TempSubFrame.WordsRaw(1) & " - Frame Counter: " & TempSubFrame.WordsRaw(FrameCounterWord))
@@ -592,6 +621,7 @@ Public Class EfbPerfDataMonitorService
                 'Call WriteToLog("Cycle is: " & DatabusClass.BnrDecode717B(A717RnFrame.SubFrames(FrameCounterSubFrame).WordsRaw(FrameCounterWord), 1, 4, 0, 16).DecodedPayload)
                 'tempfs = DatabusClass.BnrDecode717B(1056, 1, 4, 0, 16)
                 cycle = tempfs.DecodedPayload
+                Call WriteToLog("tempframe matches FrameCounterSubFrame (" & tempFrame & "/" & FrameCounterSubFrame & ") Cycle is " & cycle)
             End If
             If tempFrame = 4 Then
                 Call WriteToLog("Populating cycle " & cycle & ". Frame is " & A717RnFrame.SubFrames(FrameCounterSubFrame).WordsRaw(FrameCounterWord))
